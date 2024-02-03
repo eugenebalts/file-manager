@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "name": "file-manager",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node src/file-manager.js"
+  },
+  "author": "Yauheni Baltsevich",
+  "license": "ISC"
+}
