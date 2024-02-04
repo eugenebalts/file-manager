@@ -9,15 +9,15 @@ const initialDir = path.resolve(process.env.home);
 let currentDir = initialDir;
 
 const printWelcomeMessage = () => {
-  console.log(`Welcome to the File Manager, ${username}!`);
+  console.log(`\nWelcome to the File Manager, ${username}!\n`);
 };
 
 const printFarewellMessage = () => {
-  console.log(`Thank you for using File Manager, ${username}, goodbye!`);
+  console.log(`\nThank you for using File Manager, ${username}, goodbye!\n`);
 };
 
 const printCurrentDir = () => {
-  console.log(`You are currently in ${currentDir}`);
+  console.log(`\nYou are currently in ${currentDir}\n`);
 };
 
 const readline = createInterface({
@@ -62,6 +62,18 @@ const fileSystem = {
       console.error(err.message);
     }
   },
+
+  up: () => {
+    const pathFolders = currentDir.split(path.sep);
+
+    if (pathFolders.length > 1) {
+      pathFolders.pop();
+    }
+
+    currentDir = pathFolders.join(path.sep);
+
+    printCurrentDir();
+  },
 };
 
 readline.on('line', (data) => {
@@ -72,6 +84,10 @@ readline.on('line', (data) => {
 
     case 'ls':
       fileSystem.ls();
+      break;
+
+    case 'up':
+      fileSystem.up();
       break;
 
     default:
