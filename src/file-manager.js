@@ -1,3 +1,4 @@
+import { fsync, readdir } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin, stdout } from 'node:process';
@@ -74,26 +75,49 @@ const fileSystem = {
 
     printCurrentDir();
   },
+
+  cd: async (route) => {
+    try {
+      const newPath = path.join(currentDir, `./${route}`);
+      await fs.readdir(newPath);
+
+      currentDir = newPath;
+    } catch (err) {
+      console.error(`\n${err.message}`);
+    }
+
+    printCurrentDir();
+  },
 };
 
-readline.on('line', (data) => {
-  switch (data) {
-    case 'quit':
-      readline.close();
-      break;
+readline.on('line', (command) => {
+  if (command === 'quit') {
+    readline.close();
 
-    case 'ls':
-      fileSystem.ls();
-      break;
-
-    case 'up':
-      fileSystem.up();
-      break;
-
-    default:
-      console.log('Invalid input');
-      break;
+    return;
   }
+
+  if (command === 'ls') {
+    fileSystem.ls();
+
+    return;
+  }
+
+  if (command === 'up') {
+    fileSystem.up();
+
+    return;
+  }
+
+  if (command.startsWith('cd ')) {
+    const argument = command.slice(3).trim();
+
+    fileSystem.cd(argument);
+
+    return;
+  }
+
+  console.log('Invalid input');
 });
 
 readline.on('close', () => {
