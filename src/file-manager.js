@@ -4,6 +4,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline';
+import { createHash } from 'node:crypto';
+import { createBrotliCompress } from 'node:zlib';
 
 const username = process.env.npm_config_username?.replace('_', ' ') ?? 'User';
 const initialDir = path.resolve(process.env.home);
@@ -140,7 +142,7 @@ const fileSystem = {
       await fs.rename(oldFile, newFile);
 
       console.log(
-        `\nFile oldName successfully renamed to newName and available at path ${newFile}\n`
+        `\nFile ${oldName} successfully ${renamed} to newName and available at path ${newFile}\n`
       );
     } catch (err) {
       console.error(`\n${err.message}\n`);
@@ -278,6 +280,64 @@ const operationSystem = {
       }
 
       console.log(`\nCPU architecture: ${architecture}\n`);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+};
+
+const zip = {
+  compress: async (source, destination) => {
+    const sourceFile = path.join(currentDir, `./${source}`);
+    const destinationFile = path.join(
+      currentDir,
+      `./${destination}/${source}.br`
+    );
+
+    try {
+      await fs.access(destinationFile);
+
+      throw new Error(`File ${destinationFile} is already exists`);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        const destinationDir = path.dirname(destinationFile);
+        await fs.mkdir(destinationDir, { recursive: true });
+
+        const readableSteam = createReadStream(sourceFile);
+        const writeStream = createWriteStream(destinationFile);
+        const compressStream = createBrotliCompress();
+
+        readableSteam.on('error', (err) => {
+          console.error(`\n${err.message}\n`);
+        });
+
+        readableSteam.pipe(compressStream).pipe(writeStream);
+
+        writeStream.on('finish', () => {
+          console.log(`\nFile has been successfully compressed\n`);
+        });
+      } else {
+        console.error(`\n${err.message}\n`);
+      }
+    }
+  },
+};
+
+const cryptographic = {
+  hash: async (route) => {
+    try {
+      const sourceFile = path.join(currentDir, `./${route}`);
+      const readableStream = createReadStream(sourceFile, 'utf-8');
+
+      const hash = createHash('sha256');
+
+      readableStream.on('data', (chunk) => {
+        hash.update(chunk);
+      });
+
+      readableStream.on('end', () => {
+        console.log(`\n${hash.digest('hex')}\n`);
+      });
     } catch (err) {
       console.error(`\n${err.message}\n`);
     }
@@ -426,6 +486,21 @@ readline.on('line', (command) => {
   // HASH
 
   if (command.startsWith('hash ')) {
+    const argument = command.slice(5).trim();
+
+    cryptographic.hash(argument);
+
+    return;
+  }
+
+  // ZLIB
+
+  if (command.startsWith('compress ')) {
+    const args = command.trim().slice(9).split(' ');
+
+    zip.compress(args[0], args[1]);
+
+    return;
   }
 
   console.log('Invalid input');
