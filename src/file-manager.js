@@ -592,7 +592,7 @@ readline.on('line', (command) => {
     return;
   }
 
-  console.log('Invalid input');
+  console.log('\nInvalid input\n');
 });
 
 readline.on('close', () => {
