@@ -207,7 +207,7 @@ const fileSystem = {
 };
 
 const operationSystem = {
-  eol: async () => {
+  eol: () => {
     try {
       console.log(`\n${JSON.stringify(os.EOL)}\n`);
     } catch (err) {
@@ -215,7 +215,7 @@ const operationSystem = {
     }
   },
 
-  cpus: async () => {
+  cpus: () => {
     try {
       const cpuData = os.cpus();
 
@@ -237,6 +237,14 @@ const operationSystem = {
         Cores: cores,
         Frequency: frequency,
       });
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+
+  homedir: () => {
+    try {
+      console.log(`\n${os.homedir()}\n`);
     } catch (err) {
       console.error(`\n${err.message}\n`);
     }
@@ -329,6 +337,11 @@ readline.on('line', (command) => {
 
       case 'cpus':
         operationSystem.cpus();
+
+        break;
+
+      case 'homedir':
+        operationSystem.homedir();
 
         break;
 
