@@ -1,6 +1,7 @@
 import { createReadStream, createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline';
 
@@ -205,6 +206,16 @@ const fileSystem = {
   },
 };
 
+const operationSystem = {
+  eol: async () => {
+    try {
+      console.log(`\n${JSON.stringify(os.EOL)}\n`);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+};
+
 readline.on('line', (command) => {
   if (command === 'quit') {
     readline.close();
@@ -276,6 +287,28 @@ readline.on('line', (command) => {
     const args = command.slice(3).trim().split(' ');
 
     fileSystem.mv(args[0], args[1]);
+
+    return;
+  }
+
+  if (command.startsWith('os ')) {
+    const argument = command.slice(5).trim();
+
+    switch (argument) {
+      case 'EOL':
+        operationSystem.eol();
+
+        break;
+
+      default:
+        console.log(
+          `\nUnknown OS argument ${argument}${
+            os[argument.toUpperCase()]
+              ? `. Looks like you mean ${argument.toUpperCase()}`
+              : ''
+          }\n`
+        );
+    }
 
     return;
   }
