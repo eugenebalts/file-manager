@@ -1,4 +1,4 @@
-import { createReadStream, fsync, readdir } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin, stdout } from 'node:process';
@@ -106,6 +106,30 @@ const fileSystem = {
       console.error(`\n${err.message}`);
     }
   },
+
+  add: async (name) => {
+    const filePath = path.join(currentDir, name);
+
+    try {
+      await fs.access(filePath);
+
+      throw new Error(`File ${name} already exists at path ${filePath}\n`);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        try {
+          await fs.writeFile(filePath, '');
+
+          console.log(
+            `\nFile ${name} has been successfully created and is available at path ${filePath}\n`
+          );
+        } catch (writeError) {
+          console.error(`\n${writeError.message}`);
+        }
+      } else {
+        console.error(`\n${err.message}`);
+      }
+    }
+  },
 };
 
 readline.on('line', (command) => {
@@ -139,6 +163,14 @@ readline.on('line', (command) => {
     const argument = command.slice(3).trim();
 
     fileSystem.cat(argument);
+
+    return;
+  }
+
+  if (command.startsWith('add ')) {
+    const argument = command.slice(3).trim();
+
+    fileSystem.add(argument);
 
     return;
   }
