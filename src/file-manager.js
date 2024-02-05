@@ -214,6 +214,33 @@ const operationSystem = {
       console.error(`\n${err.message}\n`);
     }
   },
+
+  cpus: async () => {
+    try {
+      const cpuData = os.cpus();
+
+      if (cpuData.length === 0) {
+        throw new Error('No CPU information available');
+      }
+
+      const model = cpuData[0].model;
+      const cores = cpuData.length;
+      const frequency = cpuData.map((core, index) => {
+        return {
+          core: index + 1,
+          frequency: (core.speed / 1000).toFixed(1) + ' GHZ',
+        };
+      });
+
+      console.log({
+        Model: model,
+        Cores: cores,
+        Frequency: frequency,
+      });
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
 };
 
 readline.on('line', (command) => {
@@ -300,14 +327,31 @@ readline.on('line', (command) => {
 
         break;
 
+      case 'cpus':
+        operationSystem.cpus();
+
+        break;
+
       default:
-        console.log(
-          `\nUnknown OS argument ${argument}${
-            os[argument.toUpperCase()]
-              ? `. Looks like you mean ${argument.toUpperCase()}`
-              : ''
-          }\n`
-        );
+        const defaultMessage = `Unknown OS argument '${argument}'`;
+        const isInUpperCase = argument === argument.toUpperCase();
+
+        let isOsContainsArgument = false;
+        let tipArgument = '';
+
+        if (isInUpperCase) {
+          isOsContainsArgument = !!os[argument.toLowerCase()];
+          tipArgument = argument.toLowerCase();
+        } else {
+          isOsContainsArgument = !!os[argument.toUpperCase()];
+          tipArgument = argument.toUpperCase();
+        }
+
+        const additionalMessage = isOsContainsArgument
+          ? `. Looks like you mean '${tipArgument}'`
+          : null;
+
+        console.log(`\n${defaultMessage}${additionalMessage ?? ''}\n`);
     }
 
     return;
