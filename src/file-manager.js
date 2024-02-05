@@ -1,4 +1,4 @@
-import { createReadStream } from 'node:fs';
+import { createReadStream, createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin, stdout } from 'node:process';
@@ -145,6 +145,42 @@ const fileSystem = {
       console.error(`\n${err.message}\n`);
     }
   },
+
+  cp: async (from, to) => {
+    const sourcePath = path.join(currentDir, `./${from}`);
+    const destinationPath = path.join(currentDir, `./${to}`);
+
+    try {
+      await fs.access(destinationPath);
+
+      throw new Error(`File at path ${destinationPath} is already exists`);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        try {
+          const destinationDir = path.dirname(destinationPath);
+          await fs.mkdir(destinationDir, { recursive: true });
+
+          const sourceStream = createReadStream(sourcePath);
+          const destinationStream = createWriteStream(destinationPath);
+
+          sourceStream.pipe(destinationStream);
+
+          await new Promise((res, rej) => {
+            destinationStream.on('finish', res);
+            destinationStream.on('error', rej);
+          });
+
+          console.log(
+            `\nFile copied from ${sourcePath} to ${destinationPath}\n`
+          );
+        } catch (err) {
+          console.error(`\n${err.message}\n`);
+        }
+      } else {
+        console.error(`\n${err.message}\n`);
+      }
+    }
+  },
 };
 
 readline.on('line', (command) => {
@@ -194,6 +230,14 @@ readline.on('line', (command) => {
     const args = command.slice(3).trim().split(' ');
 
     fileSystem.rn(args[0], args[1]);
+
+    return;
+  }
+
+  if (command.startsWith('cp ')) {
+    const args = command.slice(3).trim().split(' ');
+
+    fileSystem.cp(args[0], args[1]);
 
     return;
   }
