@@ -244,7 +244,12 @@ const operationSystem = {
 
   homedir: () => {
     try {
-      console.log(`\n${os.homedir()}\n`);
+      const homedir = os.userInfo()?.username;
+
+      if (!homedir) {
+        throw new Error('Cannot get info about home directory');
+      }
+      console.log(`\n${homedir}\n`);
     } catch (err) {
       console.error(`\n${err.message}\n`);
     }
@@ -252,7 +257,27 @@ const operationSystem = {
 
   username: () => {
     try {
-      console.log(`\n${os.userInfo()?.username}\n`);
+      const username = os.userInfo()?.username;
+
+      if (!username) {
+        throw new Error('Cannot get info about username');
+      }
+
+      console.log(`\n${username}\n`);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+
+  architecture: () => {
+    try {
+      const architecture = os.arch();
+
+      if (!architecture) {
+        throw new Error('Cannot get info about CPU architecture');
+      }
+
+      console.log(`\nCPU architecture: ${architecture}\n`);
     } catch (err) {
       console.error(`\n${err.message}\n`);
     }
@@ -355,6 +380,11 @@ readline.on('line', (command) => {
 
       case 'username':
         operationSystem.username();
+
+        break;
+
+      case 'architecture':
+        operationSystem.architecture();
 
         break;
 
