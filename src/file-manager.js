@@ -60,7 +60,7 @@ const fileSystem = {
 
       console.log(sortedList);
     } catch (err) {
-      console.error(err.message);
+      console.error(`\n${err.message}\n`);
     }
   },
 
@@ -83,7 +83,7 @@ const fileSystem = {
 
       currentDir = newPath;
     } catch (err) {
-      console.error(`\n${err.message}`);
+      console.error(`\n${err.message}\n`);
     }
 
     printCurrentDir();
@@ -103,12 +103,12 @@ const fileSystem = {
         console.error(err);
       });
     } catch (err) {
-      console.error(`\n${err.message}`);
+      console.error(`\n${err.message}\n`);
     }
   },
 
   add: async (name) => {
-    const filePath = path.join(currentDir, name);
+    const filePath = path.join(currentDir, `./${name}`);
 
     try {
       await fs.access(filePath);
@@ -126,8 +126,23 @@ const fileSystem = {
           console.error(`\n${writeError.message}`);
         }
       } else {
-        console.error(`\n${err.message}`);
+        console.error(`\n${err.message}\n`);
       }
+    }
+  },
+
+  rn: async (oldName, newName) => {
+    try {
+      const oldFile = path.join(currentDir, `./${oldName}`);
+      const newFile = path.join(currentDir, `./${newName}`);
+
+      await fs.rename(oldFile, newFile);
+
+      console.log(
+        `\nFile oldName successfully renamed to newName and available at path ${newFile}\n`
+      );
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
     }
   },
 };
@@ -171,6 +186,14 @@ readline.on('line', (command) => {
     const argument = command.slice(3).trim();
 
     fileSystem.add(argument);
+
+    return;
+  }
+
+  if (command.startsWith('rn ')) {
+    const args = command.slice(3).trim().split(' ');
+
+    fileSystem.rn(args[0], args[1]);
 
     return;
   }
