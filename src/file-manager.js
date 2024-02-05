@@ -291,6 +291,8 @@ readline.on('line', (command) => {
     return;
   }
 
+  // FS
+
   if (command === 'ls') {
     fileSystem.ls();
 
@@ -359,11 +361,15 @@ readline.on('line', (command) => {
     return;
   }
 
+  // OS
+
   if (command.startsWith('os ')) {
     if (!command.slice(3).startsWith('--')) {
-      return console.log(
+      console.log(
         `\nOS arguments should be written separated by '--'. For example: os --username\n`
       );
+
+      return;
     }
     const argument = command.slice(5).trim();
 
@@ -415,6 +421,11 @@ readline.on('line', (command) => {
     }
 
     return;
+  }
+
+  // HASH
+
+  if (command.startsWith('hash ')) {
   }
 
   console.log('Invalid input');
