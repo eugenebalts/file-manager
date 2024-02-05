@@ -1,4 +1,4 @@
-import { fsync, readdir } from 'node:fs';
+import { createReadStream, fsync, readdir } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin, stdout } from 'node:process';
@@ -88,6 +88,24 @@ const fileSystem = {
 
     printCurrentDir();
   },
+
+  cat: async (route) => {
+    try {
+      const destinationPath = path.join(currentDir, `./${route}`);
+
+      const readableStream = createReadStream(destinationPath, 'utf-8');
+
+      readableStream.on('data', (chunk) => {
+        console.log(chunk);
+      });
+
+      readableStream.on('error', (err) => {
+        console.error(err);
+      });
+    } catch (err) {
+      console.error(`\n${err.message}`);
+    }
+  },
 };
 
 readline.on('line', (command) => {
@@ -113,6 +131,14 @@ readline.on('line', (command) => {
     const argument = command.slice(3).trim();
 
     fileSystem.cd(argument);
+
+    return;
+  }
+
+  if (command.startsWith('cat ')) {
+    const argument = command.slice(3).trim();
+
+    fileSystem.cat(argument);
 
     return;
   }
