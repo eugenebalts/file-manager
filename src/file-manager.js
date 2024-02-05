@@ -5,7 +5,7 @@ import os from 'node:os';
 import { stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline';
 import { createHash } from 'node:crypto';
-import { createBrotliCompress } from 'node:zlib';
+import { createBrotliCompress, createBrotliDecompress } from 'node:zlib';
 
 const username = process.env.npm_config_username?.replace('_', ' ') ?? 'User';
 const initialDir = path.resolve(process.env.home);
@@ -103,7 +103,7 @@ const fileSystem = {
       });
 
       readableStream.on('error', (err) => {
-        console.error(err);
+        console.error(`\n${err.message}\n`);
       });
     } catch (err) {
       console.error(`\n${err.message}\n`);
@@ -125,8 +125,8 @@ const fileSystem = {
           console.log(
             `\nFile ${name} has been successfully created and is available at path ${filePath}\n`
           );
-        } catch (writeError) {
-          console.error(`\n${writeError.message}`);
+        } catch (err) {
+          console.error(`\n${err.message}`);
         }
       } else {
         console.error(`\n${err.message}\n`);
@@ -136,13 +136,17 @@ const fileSystem = {
 
   rn: async (oldName, newName) => {
     try {
+      if (!newName) {
+        throw new Error('Please, specify new name');
+      }
+
       const oldFile = path.join(currentDir, `./${oldName}`);
       const newFile = path.join(currentDir, `./${newName}`);
 
       await fs.rename(oldFile, newFile);
 
       console.log(
-        `\nFile ${oldName} successfully ${renamed} to newName and available at path ${newFile}\n`
+        `\nFile ${oldName} successfully renamed to ${newName} and available at path ${newFile}\n`
       );
     } catch (err) {
       console.error(`\n${err.message}\n`);
@@ -151,26 +155,37 @@ const fileSystem = {
 
   cp: async (from, to) => {
     const sourcePath = path.join(currentDir, `./${from}`);
-    const destinationPath = path.join(currentDir, `./${to}`);
+    const destinationPath = path.join(currentDir, `./${to}/${from}`);
 
     try {
+      if (!to) {
+        throw new Error('Please, specify destination path');
+      }
+
       await fs.access(destinationPath);
 
       throw new Error(`File at path ${destinationPath} is already exists`);
     } catch (err) {
       if (err.code === 'ENOENT') {
         try {
+          await fs.access(sourcePath);
+
           const destinationDir = path.dirname(destinationPath);
           await fs.mkdir(destinationDir, { recursive: true });
 
-          const sourceStream = createReadStream(sourcePath);
-          const destinationStream = createWriteStream(destinationPath);
+          const readableStream = createReadStream(sourcePath);
 
-          sourceStream.pipe(destinationStream);
+          readableStream.on('error', (err) => {
+            console.error(`\n${err.message}\n`);
+          });
+
+          const writeStream = createWriteStream(destinationPath);
+
+          readableStream.pipe(writeStream);
 
           await new Promise((res, rej) => {
-            destinationStream.on('finish', res);
-            destinationStream.on('error', rej);
+            writeStream.on('finish', res);
+            writeStream.on('error', rej);
           });
 
           console.log(
@@ -199,8 +214,11 @@ const fileSystem = {
 
   mv: async function (from, to) {
     try {
-      await this.cp(from, to);
+      if (!to) {
+        throw new Error('Please, specify destination path');
+      }
 
+      await this.cp(from, to);
       await this.rm(from);
     } catch (err) {
       console.error(`\n${err.message}\n`);
@@ -295,27 +313,86 @@ const zip = {
     );
 
     try {
+      if (!destination) {
+        throw new Error('Please, specify destination path');
+      }
+
       await fs.access(destinationFile);
 
       throw new Error(`File ${destinationFile} is already exists`);
     } catch (err) {
       if (err.code === 'ENOENT') {
-        const destinationDir = path.dirname(destinationFile);
-        await fs.mkdir(destinationDir, { recursive: true });
+        try {
+          await fs.access(sourceFile);
 
-        const readableSteam = createReadStream(sourceFile);
-        const writeStream = createWriteStream(destinationFile);
-        const compressStream = createBrotliCompress();
+          const destinationDir = path.dirname(destinationFile);
+          await fs.mkdir(destinationDir, { recursive: true });
 
-        readableSteam.on('error', (err) => {
+          const readableSteam = createReadStream(sourceFile);
+          const writeStream = createWriteStream(destinationFile);
+          const compressStream = createBrotliCompress();
+
+          readableSteam.on('error', (err) => {
+            console.error(`\n${err.message}\n`);
+          });
+
+          readableSteam.pipe(compressStream).pipe(writeStream);
+
+          writeStream.on('finish', () => {
+            console.log(
+              `\nFile has been successfully compressed and available at path ${destinationFile}\n`
+            );
+          });
+        } catch (err) {
           console.error(`\n${err.message}\n`);
-        });
+        }
+      } else {
+        console.error(`\n${err.message}\n`);
+      }
+    }
+  },
 
-        readableSteam.pipe(compressStream).pipe(writeStream);
+  decompress: async (source, destination) => {
+    const sourceFile = path.join(currentDir, `./${source}`);
+    const destinationFile = path.join(
+      currentDir,
+      `./${destination}/${path.basename(sourceFile).replace('.br', '')}`
+    );
 
-        writeStream.on('finish', () => {
-          console.log(`\nFile has been successfully compressed\n`);
-        });
+    try {
+      if (!destination) {
+        throw new Error('Please, specify destination path');
+      }
+
+      await fs.access(destinationFile);
+
+      throw new Error(`File ${destinationFile} is already exists`);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        try {
+          await fs.access(sourceFile);
+
+          const destinationDir = path.dirname(destinationFile);
+          await fs.mkdir(destinationDir, { recursive: true });
+
+          const readableSteam = createReadStream(sourceFile);
+          const writeStream = createWriteStream(destinationFile);
+          const decompressStream = createBrotliDecompress();
+
+          readableSteam.on('error', (err) => {
+            console.error(`\n${err.message}\n`);
+          });
+
+          readableSteam.pipe(decompressStream).pipe(writeStream);
+
+          writeStream.on('finish', () => {
+            console.log(
+              `\nFile has been successfully decompressed and available at path ${destinationFile}\n`
+            );
+          });
+        } catch (err) {
+          console.error(`\n${err.message}\n`);
+        }
       } else {
         console.error(`\n${err.message}\n`);
       }
@@ -333,6 +410,10 @@ const cryptographic = {
 
       readableStream.on('data', (chunk) => {
         hash.update(chunk);
+      });
+
+      readableStream.on('error', (err) => {
+        console.error(`\n${err.message}\n`);
       });
 
       readableStream.on('end', () => {
@@ -499,6 +580,14 @@ readline.on('line', (command) => {
     const args = command.trim().slice(9).split(' ');
 
     zip.compress(args[0], args[1]);
+
+    return;
+  }
+
+  if (command.startsWith('decompress ')) {
+    const args = command.trim().slice(11).split(' ');
+
+    zip.decompress(args[0], args[1]);
 
     return;
   }
