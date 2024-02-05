@@ -360,6 +360,11 @@ readline.on('line', (command) => {
   }
 
   if (command.startsWith('os ')) {
+    if (!command.slice(3).startsWith('--')) {
+      return console.log(
+        `\nOS arguments should be written separated by '--'. For example: os --username\n`
+      );
+    }
     const argument = command.slice(5).trim();
 
     switch (argument) {
