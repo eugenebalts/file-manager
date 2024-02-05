@@ -81,6 +81,10 @@ const fileSystem = {
 
   cd: async (route) => {
     try {
+      if (!route) {
+        throw new Error('Please, specify route');
+      }
+
       const newPath = path.join(currentDir, `./${route}`);
       await fs.readdir(newPath);
 
