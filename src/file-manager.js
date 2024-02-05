@@ -181,6 +181,28 @@ const fileSystem = {
       }
     }
   },
+
+  rm: async (route) => {
+    try {
+      const sourcePath = path.join(currentDir, `./${route}`);
+
+      await fs.rm(sourcePath);
+
+      console.log(`\nFile ${route} has been successfully removed\n`);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+
+  mv: async function (from, to) {
+    try {
+      await this.cp(from, to);
+
+      await this.rm(from);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
 };
 
 readline.on('line', (command) => {
@@ -238,6 +260,22 @@ readline.on('line', (command) => {
     const args = command.slice(3).trim().split(' ');
 
     fileSystem.cp(args[0], args[1]);
+
+    return;
+  }
+
+  if (command.startsWith('rm ')) {
+    const argument = command.slice(3);
+
+    fileSystem.rm(argument);
+
+    return;
+  }
+
+  if (command.startsWith('mv ')) {
+    const args = command.slice(3).trim().split(' ');
+
+    fileSystem.mv(args[0], args[1]);
 
     return;
   }
