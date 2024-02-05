@@ -207,7 +207,7 @@ const fileSystem = {
 };
 
 const operationSystem = {
-  eol: () => {
+  EOL: () => {
     try {
       console.log(`\n${JSON.stringify(os.EOL)}\n`);
     } catch (err) {
@@ -245,6 +245,14 @@ const operationSystem = {
   homedir: () => {
     try {
       console.log(`\n${os.homedir()}\n`);
+    } catch (err) {
+      console.error(`\n${err.message}\n`);
+    }
+  },
+
+  username: () => {
+    try {
+      console.log(`\n${os.userInfo()?.username}\n`);
     } catch (err) {
       console.error(`\n${err.message}\n`);
     }
@@ -331,7 +339,7 @@ readline.on('line', (command) => {
 
     switch (argument) {
       case 'EOL':
-        operationSystem.eol();
+        operationSystem.EOL();
 
         break;
 
@@ -345,18 +353,22 @@ readline.on('line', (command) => {
 
         break;
 
+      case 'username':
+        operationSystem.username();
+
+        break;
+
       default:
         const defaultMessage = `Unknown OS argument '${argument}'`;
-        const isInUpperCase = argument === argument.toUpperCase();
 
         let isOsContainsArgument = false;
         let tipArgument = '';
 
-        if (isInUpperCase) {
-          isOsContainsArgument = !!os[argument.toLowerCase()];
+        if (!!operationSystem[argument.toLowerCase()]) {
+          isOsContainsArgument = !!operationSystem[argument.toLowerCase()];
           tipArgument = argument.toLowerCase();
-        } else {
-          isOsContainsArgument = !!os[argument.toUpperCase()];
+        } else if (!!operationSystem[argument.toUpperCase()]) {
+          isOsContainsArgument = !!operationSystem[argument.toUpperCase()];
           tipArgument = argument.toUpperCase();
         }
 
