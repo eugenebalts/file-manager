@@ -430,7 +430,7 @@ const cryptographic = {
 };
 
 readline.on('line', (command) => {
-  if (command === 'quit' || '.exit') {
+  if (command === '.exit') {
     readline.close();
 
     return;
